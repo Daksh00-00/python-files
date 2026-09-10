@@ -1,4 +1,4 @@
-mark=eval(input("Enter list of mark"))
+
 def hz(mark):
     d={}
     s=""
@@ -23,17 +23,40 @@ def stats(mark):
         
     print(f"no: of distinct mark is :{c}")
 def higest():
-    dmark=hz(mark)
-    c=[]
+    dmark = hz(mark)
+    highest = max(dmark.values())
+
     for i in dmark:
-        if dmark[i]>c:
-            c.append(dmark[i])
-            c.append(" the frquency of given mark is "+str(i)+"\n")
-        if c==dmark:
-            c.append(dmark[i])
-            
-            c.append(" the frquency of given mark is "+str(i)+"\n")
-for i in c:
-    print(i,end="")
-    
- higest()       
+        if dmark[i] == highest:
+            print("The frequency of", i, "is", highest)
+
+def search(mark):
+    smark=int(input("enter a mark:"))
+    if smark in mark:
+        print("The mark exist!")
+        n=hz(mark)
+        print(n[smark])
+while True:
+    print("1.frequency dictionary")
+    print("2.stats")
+    print("3.analysis")
+    print("4.search")
+    print("5.exit")
+    print()
+    choice=int(input("Enter a choice(1,2,3,4,5): "))
+    print()
+    mark=eval(input("Enter list of mark"))
+    if choice==1:
+        hz(mark)
+    elif choice==2:
+        stats(mark)
+    elif choice==3:
+        higest(mark)
+    elif choice==4:
+        search()
+    elif choice==5:
+        print("bye!!")
+        break
+    else:
+        print("invalid chice")
+        print()
