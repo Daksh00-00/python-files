@@ -1,6 +1,8 @@
 import tkinter as tk
 import ttkbootstrap as ttk
 from PIL import Image, ImageTk
+from tkinter import messagebox
+
 
 #window
 window=ttk.Window(themename="minty")
@@ -10,14 +12,14 @@ window.config(background="#E8EDD0")
 window.title("Green care")
 
 #image ig
-og_image=Image.open("background.jpg")
+og_image=Image.open("C:\\Users\\DAKSH\\OneDrive\\Documents\\python_projects\\school_practical\\school_project\\background.jpg")
 
 
 #canvas
 canvas=ttk.Canvas(master=window,highlightthickness=0)
 canvas.pack(fill="both",expand=True)
 
-#resize the f-ing background 
+#resize the background 
 def back_ground(event):
     new_image=og_image.resize((event.width,event.height))
     new_image=ImageTk.PhotoImage(new_image)
@@ -89,7 +91,15 @@ frame2.pack(pady=25)
 main_frame.place(relx=0.5,rely=0.5,anchor="center")
 
 #admin and client and whoever  login thingy
+
+current_user=""
+
 def open_login(user_type):
+
+    global current_user
+
+    current_user=user_type
+    
     main_frame.place_forget()
 
     login_title.config(text=user_type + " Login")
@@ -99,6 +109,7 @@ def open_login(user_type):
 def back_ig():
     login_frame.place_forget()
     main_frame.place(relx=0.5,rely=0.5,anchor="center")
+
 
 #login frame
 login_frame = ttk.Frame(
@@ -150,15 +161,33 @@ login_button = ttk.Button(
     master=login_frame,
     text="Login",
     width=20,
-    bootstyle="success")
+    bootstyle="success",command=lambda:login_login(regi_username_var))
 login_button.pack(pady=20)
+
+#register
+def register():
+    login_frame.place_forget()
+
+    regi_title.config(text=current_user + " account")
+
+    #Show pass key only for Admin
+    if current_user == "Admin":
+        regi_key.pack(pady=(15, 0))
+        pass_key_entry.pack(pady=20)
+    else:
+        regi_key.pack_forget()
+        pass_key_entry.pack_forget()
+
+
+
+    regi_frame.place(relx=0.5, rely=0.5, anchor="center")
 
 # register button
 register_button = ttk.Button(
     master=login_frame,
     text="Register",
     width=20,
-    bootstyle="outline-success")
+    bootstyle="success",command=lambda:register())
 register_button.pack()
 
 #back button
@@ -167,6 +196,225 @@ back_button = ttk.Button(
     text="← Back",
     bootstyle="link-success",command=back_ig)
 back_button.pack(pady=15)
+
+#registreing function
+def create_account(username,password,con_password):
+
+    username=regi_username_var.get()
+    password=regi_pass_var.get()
+    con_password=regi_passcon_var.get()
+
+
+    if username=="" or password=="" or con_password=="":
+        return
+
+    if password != con_password:
+        return 
+    
+
+
+
+
+def login_user():
+    pass
+
+
+
+
+
+#register frame
+
+regi_frame=ttk.Frame(master=window,
+    style="Green.TFrame",
+    width=400,
+    height=400)
+
+#reistre title
+regi_title = ttk.Label(
+    master=regi_frame,
+    text="Register",
+    font=("Segoe UI", 25, "bold"),
+    background="#E8EDD0",
+    foreground="green")
+regi_title.pack(pady=30)
+
+#register username
+regi_username_label = ttk.Label(
+    master=regi_frame,
+    text="Username",
+    font=("Segoe UI", 12, "bold"),
+    background="#E8EDD0",
+    foreground="green")
+regi_username_label.pack()
+
+
+regi_username_var=ttk.StringVar()
+
+regi_username_entry = ttk.Entry(
+    master=regi_frame,
+    width=30, textvariable=regi_username_var)
+regi_username_entry.pack(pady=5,padx=50)
+
+#registering password
+regi_password_label1 = ttk.Label(
+    master=regi_frame,
+    text="Password",
+    font=("Segoe UI", 12, "bold"),
+    background="#E8EDD0",
+    foreground="green")
+regi_password_label1.pack(pady=(15, 0))
+
+regi_pass_var=ttk.StringVar()
+
+regi_password_entry1 = ttk.Entry(
+    master=regi_frame,
+    width=30,
+    show="*",
+    textvariable=regi_pass_var)
+regi_password_entry1.pack(pady=5,padx=50)
+
+#pass confirmation
+
+regi_passcon_var=ttk.StringVar()
+
+regi_password_label2 = ttk.Label(
+    master=regi_frame,
+    text="Confirm Password",
+    font=("Segoe UI", 12, "bold"),
+    background="#E8EDD0",
+    foreground="green")
+regi_password_label2.pack(pady=(15, 0))
+
+regi_password_entry2 = ttk.Entry(
+    master=regi_frame,
+    width=30,
+    show="*",textvariable=regi_passcon_var)
+regi_password_entry2.pack(pady=5,padx=50)
+
+#pass key 
+regi_key = ttk.Label(
+        master=regi_frame,
+        text="Pass Key",
+        font=("Segoe UI", 12, "bold"),
+        background="#E8EDD0",
+        foreground="green")
+regi_key.pack(pady=(15, 0))
+
+
+#pass key for admin
+
+pass_key=ttk.StringVar()
+
+
+pass_key_entry=ttk.Entry( master=regi_frame,
+width=30, textvariable=pass_key)
+pass_key_entry.pack(pady=20)
+
+
+#create account
+create_button = ttk.Button(
+    master=regi_frame,
+    text="Create Account",
+    width=20,
+    bootstyle="success")
+create_button.pack(pady=20)
+
+
+#registration back button ,the function
+def register_back():
+
+    regi_frame.place_forget()
+
+    login_frame.place(
+        relx=0.5,
+        rely=0.5,
+        anchor="center")
+
+
+#registration back button 
+regi_back_button = ttk.Button(
+    master=regi_frame,
+    text="← Back",
+    bootstyle="link-success",
+    command=lambda: register_back())
+
+regi_back_button.pack(pady=20)
+
+def login_login(user):
+
+
+    if current_user=="Admin":
+
+         def open_admin_window(username):
+        
+                admin_window = tk.Toplevel(window)
+        
+                admin_window.geometry("1000x650")
+        
+                admin_window.title("Green Care - Admin")
+        
+                admin_window.config(background="#E8EDD0")
+        
+                title = ttk.Label(
+                    admin_window,
+                    text=f"Welcome Admin, {username}",
+                    font=("Segoe UI", 24, "bold"),
+                    background="#E8EDD0",
+                    foreground="green")
+        
+                title.pack(pady=40)
+        
+                logout_button = ttk.Button(
+                    admin_window,
+                    text="Logout",
+                    bootstyle="success",
+                    command=admin_window.destroy)
+        
+                logout_button.pack()
+        
+    if current_user=="Client":
+        def open_client_window(username):
+        
+                client_window = tk.Toplevel(window)
+        
+                client_window.geometry("1000x650")
+        
+                client_window.title(
+                "Green Care - Client")
+        
+                client_window.config(
+                    background="#E8EDD0")
+        
+                title = ttk.Label(
+                    client_window,
+                    text=f"Welcome, {username}",
+                    font=("Segoe UI", 24, "bold"),
+                    background="#E8EDD0",
+                    foreground="green")
+        
+                title.pack(pady=40)
+                logout_button = ttk.Button(
+                    client_window,
+                    text="Logout",
+                    bootstyle="success",
+                    command=client_window.destroy)
+        
+                logout_button.pack()
+
+
+
+
+
+admin_frame=ttk.Frame()
+
+
+
+
+
+
+
+
+
 
 
 #mainloop
