@@ -433,7 +433,7 @@ def open_admin_window():
 
     #sidebar
 
-    sidebar=ttk.Frame(admin_window,width=210)
+    sidebar=ttk.Frame(admin_window,width=210,style="Side.TFrame" )
     sidebar.pack(side="left",fill="y")
     sidebar.pack_propagate(False)
 
@@ -537,11 +537,14 @@ def open_admin_window():
     cards_frame.pack(fill="x",
         pady=(0,25))
 
+    style.configure("Card.TFrame",
+                background="#BFD8B8")
+
 
     #doctor card
 
     doctor_card=ttk.Frame(cards_frame,
-        padding=20)
+        padding=20,style="Card.TFrame")
 
     doctor_card.pack(side="left",
         fill="both",
@@ -563,9 +566,16 @@ def open_admin_window():
 
     #patient card
 
+    patient_count_var=ttk.StringVar()
+
+
+    def update_patient_count():
+        patient_count=get_patient_count()
+        patient_count_var.set(str(patient_count))
+
     patient_card=ttk.Frame(
         cards_frame,
-        padding=20)
+        padding=20,style="Card.TFrame")
 
     patient_card.pack(side="left",
         fill="both",
@@ -573,22 +583,25 @@ def open_admin_window():
         padx=10)
 
     patient_title=ttk.Label(patient_card,
-        text="Patients",
+        text="patients",
         font=("Arial",11))
 
     patient_title.pack(anchor="w")
 
     patient_value=ttk.Label(patient_card,
-        text="436",
+        textvariable=patient_count_var,
         font=("Arial",24,"bold"))
 
     patient_value.pack(anchor="w",pady=(8,0))
 
 
+    #update_patient_count()    ##### plz remeber to un hash it 
+
+
     #appointment card
 
     appointment_card=ttk.Frame(cards_frame,
-        padding=20)
+        padding=20,style="Card.TFrame")
 
     appointment_card.pack(side="left",
         fill="both",
@@ -611,7 +624,7 @@ def open_admin_window():
     #pending card
 
     pending_card=ttk.Frame(cards_frame,
-        padding=20)
+        padding=20,style="Card.TFrame")
 
     pending_card.pack(side="left",
         fill="both",
@@ -629,6 +642,109 @@ def open_admin_window():
         font=("Arial",24,"bold"))
 
     pending_value.pack(anchor="w",pady=(8,0))
+
+
+    #graph code 
+    #patient graph
+
+    style.configure("Graph.TFrame",
+                background="#FFFFFF",
+                borderwidth=3,
+                relief="solid")
+
+    graph_frame=ttk.Frame(content,
+        padding=20,style="Graph.TFrame")
+
+    graph_frame.pack(fill="both",
+        expand=True,
+        pady=(0,25))
+
+
+    graph_title=ttk.Label(graph_frame,
+        text="Patient Registrations",
+        font=("Arial",16,"bold"))
+
+    graph_title.pack(anchor="w",
+        pady=(0,15))
+
+
+    graph_canvas=tk.Canvas(
+        graph_frame,
+        height=220,
+        background="#FFFFFF",
+        highlightthickness=0)
+
+    graph_canvas.pack(
+        fill="both",
+        expand=True)
+
+
+    data=[
+        ("May",42),
+        ("June",58),
+        ("July",71),
+        ("August",83),
+        ("September",96)]
+
+
+    def draw_graph():
+
+        graph_canvas.delete("all")
+
+        width=graph_canvas.winfo_width()
+        height=graph_canvas.winfo_height()
+
+        left=50
+        right=30
+        top=20
+        bottom=40
+
+        graph_width=width-left-right
+        graph_height=height-top-bottom
+
+        max_value=max(value for month,value in data)
+
+        x_gap=graph_width/(len(data)-1)
+
+        points=[]
+
+        for i,(month,value) in enumerate(data):
+
+            x=left+(i*x_gap)
+
+            y=top+graph_height-(value/max_value)*graph_height
+
+            points.append((x,y))
+
+            graph_canvas.create_oval(
+                x-4,y-4,
+                x+4,y+4,
+                fill="#4F7D45",
+                outline="")
+
+            graph_canvas.create_text(
+                x,
+                y-15,
+                text=value)
+
+            graph_canvas.create_text(
+                x,
+                height-bottom+20,
+                text=month)
+
+
+        for i in range(len(points)-1):
+
+            graph_canvas.create_line(
+                points[i][0],
+                points[i][1],
+                points[i+1][0],
+                points[i+1][1],
+                fill="#4F7D45",
+                width=3)
+
+
+    graph_canvas.after(100,draw_graph)
 
 
     #recent activity
