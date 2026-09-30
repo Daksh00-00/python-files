@@ -2,7 +2,7 @@ import tkinter as tk
 import ttkbootstrap as ttk
 from PIL import Image, ImageTk
 from tkinter import messagebox
-
+from datetime import datetime
 #window
 window=ttk.Window(themename="minty")
 
@@ -398,43 +398,26 @@ def open_admin_window():
 
     cards_frame.pack(fill="x",pady=(0,25))
 
-    style.configure("Card.TFrame",background="#BFD8B8")
+    style.configure("Card.TFrame",background="#3D6732",borderwidth=3,relif="solid",
+                    highlightbackground="#365D2C",highlightthickness=3)
 
     #doctor card
     doctor_card=ttk.Frame(cards_frame,padding=20,style="Card.TFrame")
-
     doctor_card.pack(side="left",fill="both",expand=True,padx=(0,10))
-
     doctor_title=ttk.Label(doctor_card,text="Doctors",font=("Arial",11))
-
     doctor_title.pack(anchor="w")
-
     doctor_value=ttk.Label(doctor_card,text="12",font=("Arial",24,"bold"))
-
     doctor_value.pack(anchor="w",pady=(8,0))
 
     #patient card
-
     patient_count_var=ttk.StringVar()
-
-    def update_patient_count():
-        patient_count=get_patient_count()
-        patient_count_var.set(str(patient_count))
-
     patient_card=ttk.Frame(cards_frame,padding=20,style="Card.TFrame")
-
     patient_card.pack(side="left",fill="both",expand=True,padx=10)
-
     patient_title=ttk.Label(patient_card,text="patients",font=("Arial",11))
-
     patient_title.pack(anchor="w")
-
     patient_value=ttk.Label(patient_card,textvariable=patient_count_var,
         font=("Arial",24,"bold"))
-
-    patient_value.pack(anchor="w",pady=(8,0))
-
-    #update_patient_count()    ##### plz remeber to un hash it 
+    patient_value.pack(anchor="w",pady=(8,0)) 
 
     #appointment card
 
@@ -477,13 +460,40 @@ def open_admin_window():
 
     graph_title=ttk.Label(graph_frame,text="Patient Registrations",
         font=("Arial",16,"bold"))
-    graph_title.pack(anchor="w",pady=(0,15))
+    graph_title.pack(anchor="w",pady=(0,10))
+
+    # choose how many months to show
+    months_box=ttk.Combobox(graph_frame,values=["6 months","12 months"],
+        state="readonly",width=12)
+    months_box.set("6 months")
+    months_box.pack(anchor="w",pady=(0,10))
 
     graph_canvas=tk.Canvas(graph_frame,height=220,background="#FFFFFF",
         highlightthickness=0)
     graph_canvas.pack(fill="both",expand=True)
 
-    data=[("May",42),("June",58),("July",71),("August",83),("September",96)]
+    # count patients per month for the last few months
+    def get_graph_data():
+        months_to_show=int(months_box.get().split()[0])
+        year=datetime.now().year
+        month=datetime.now().month
+
+        periods=[]
+        for i in range(months_to_show):
+            periods.append((year,month))
+            month-=1
+            if month==0:
+                month=12
+                year-=1
+        periods.reverse()
+
+        result=[]
+        for y,m in periods:
+            key=f"{y}-{m:02d}"
+            count=len([p for p in patients if p[4].startswith(key)])
+            label=datetime(y,m,1).strftime("%b")
+            result.append((label,count))
+        return result
 
     def draw_graph():
 
@@ -491,6 +501,12 @@ def open_admin_window():
 
         width=graph_canvas.winfo_width()
         height=graph_canvas.winfo_height()
+
+        # canvas not visible yet
+        if width<=1:
+            return
+
+        data=get_graph_data()
 
         left=50
         right=30
@@ -500,9 +516,9 @@ def open_admin_window():
         graph_width=width-left-right
         graph_height=height-top-bottom
 
-        max_value=max(value for month,value in data)
+        max_value=max(max(value for month,value in data),1)
 
-        x_gap=graph_width/(len(data)-1)
+        x_gap=graph_width/max(len(data)-1,1)
 
         points=[]
 
@@ -518,7 +534,6 @@ def open_admin_window():
             graph_canvas.create_text(x,height-bottom+20,text=month)
 
         for i in range(len(points)-1):
-
             graph_canvas.create_line(
                 points[i][0],
                 points[i][1],
@@ -527,12 +542,14 @@ def open_admin_window():
                 fill="#4F7D45",
                 width=3)
 
-    graph_canvas.after(100,draw_graph)
-
-    def update_graph(new_data):
-        nonlocal data
-        data=new_data
+    # update the patient card and the graph together
+    def refresh_dashboard():
+        patient_count_var.set(str(len(patients)))
         draw_graph()
+    # redraw on resize and when the dropdown changes
+    graph_canvas.bind("<Configure>",lambda event:draw_graph())
+    months_box.bind("<<ComboboxSelected>>",lambda event:draw_graph())
+    graph_canvas.after(100,refresh_dashboard)
 
     #page switching
     current_page={"frame":None}
@@ -546,7 +563,7 @@ def open_admin_window():
     def show_dashboard():
         clear_page()
         dashboard_frame.pack(fill="both",expand=True)
-        graph_canvas.after(100,draw_graph)
+        graph_canvas.after(100,refresh_dashboard)
 
     #doctors button shows all thisss
     # temporary doctor data
@@ -574,10 +591,24 @@ def open_admin_window():
         table_frame = ttk.Frame(doctors_frame)
         table_frame.pack(fill="both",expand=True)
 
+    # table style
+        style.configure("Green.Treeview.Heading",
+                        background="#215A17",
+                        foreground="#FFFFFF",
+                        font=("Arial",11,"bold"))
+        style.map("Green.Treeview.Heading",
+                    background=[("active","#25561B")])
+
+        style.configure("Green.Treeview",
+                        background="#F3F6EA",
+                        fieldbackground="#F3F6EA",
+                        foreground="#163D12",
+                        rowheight=28)
+
         # doctor table
         doctor_table = ttk.Treeview(table_frame,
                             columns=("id","name","specialization","phone"),
-                             show="headings")
+                             show="headings",style="Green.Treeview")
         # column headings
         doctor_table.heading("id",text="ID")
         doctor_table.heading("name",text="Name")
@@ -700,9 +731,12 @@ def open_admin_window():
 
         # temporary patient data
     patients = [
-        (1, "Ravi Kumar", "34", "9123456780"),
-        (2, "Anita Das", "27", "9123456781"),
-        (3, "Sam Thomas", "45", "9123456782")]
+        (1, "Ravi Kumar", "34", "9123456780", "2026-05-10"),
+        (2, "Anita Das", "27", "9123456781", "2026-06-18"),
+        (3, "Sam Thomas", "45", "9123456782", "2026-07-03"),
+        (4, "Meera Nair", "52", "9123456783", "2026-07-21"),
+        (5, "John Paul", "19", "9123456784", "2026-08-09"),
+        (6, "Lisa Roy", "38", "9123456785", "2026-09-02")]
 
     def show_patients():
 
@@ -738,18 +772,20 @@ def open_admin_window():
 
         # table
         patient_table = ttk.Treeview(table_frame,
-                            columns=("id","name","age","phone"),
+                            columns=("id","name","age","phone","registered"),
                             show="headings",style="Green.Treeview")
 
         patient_table.heading("id",text="ID")
         patient_table.heading("name",text="Name")
         patient_table.heading("age",text="Age")
         patient_table.heading("phone",text="Phone")
+        patient_table.heading("registered",text="Registered")
 
         patient_table.column("id",width=60)
         patient_table.column("name",width=200)
         patient_table.column("age",width=80)
         patient_table.column("phone",width=150)
+        patient_table.column("registered",width=120)
 
         # scrollbar
         scrollbar = ttk.Scrollbar(table_frame,orient="vertical",
@@ -764,9 +800,8 @@ def open_admin_window():
             patient_table.delete(*patient_table.get_children())
             for patient in patients:
                 patient_table.insert("","end",values=patient)
-
+            refresh_dashboard()
         refresh_table()
-
         # popup form
         def open_form(old_patient=None):
             popup=ttk.Toplevel(window)
@@ -810,11 +845,12 @@ def open_admin_window():
                 if old_patient is None:
                     # add new
                     new_id=max([p[0] for p in patients],default=0)+1
-                    patients.append((new_id,name,age,phone))
+                    today=datetime.now().strftime("%Y-%m-%d")
+                    patients.append((new_id,name,age,phone,today))
                 else:
                     # update existing
                     position=patients.index(old_patient)
-                    patients[position]=(old_patient[0],name,age,phone)
+                    patients[position]=(old_patient[0],name,age,phone,old_patient[4])
 
                 refresh_table()
                 popup.destroy()
@@ -1040,45 +1076,325 @@ def open_admin_window():
     patients_button.config(command=show_patients)
     medicines_button.config(command=show_medicines)
 
+# temporary client data
+temp_tasks = [
+    (1, "Morning ward round", "Pending"),
+    (2, "Review Ravi Kumar's reports", "Pending"),
+    (3, "Team meeting at 2 PM", "Done")]
+
+temp_profiles = {}
+
+def get_my_profile(username):
+    return temp_profiles.get(username)
+
+def save_my_profile(username,name,specialty,phone,hours):
+    temp_profiles[username]=(name,specialty,phone,hours)
+
+def get_tasks(username):
+    return list(temp_tasks)
+
+def add_task(username,text):
+    new_id=max([t[0] for t in temp_tasks],default=0)+1
+    temp_tasks.append((new_id,text,"Pending"))
+
+def update_task(task_id,text,status):
+    for i,t in enumerate(temp_tasks):
+        if t[0]==task_id:
+            temp_tasks[i]=(task_id,text,status)
+
+def delete_task(task_id):
+    temp_tasks[:]=[t for t in temp_tasks if t[0]!=task_id]
+
+def clear_tasks(username):
+    temp_tasks.clear()
+
 def open_client_window(username):
 
-        window.withdraw()
+    window.withdraw()
+    client_window=ttk.Toplevel(window)
 
-        client_window = tk.Toplevel(window)
+    client_window.title("Green Care - Doctor Workspace")
+    client_window.geometry("1100x700")
+    client_window.minsize(1000,650)
 
-        client_window.geometry("1000x650")
+    # styles (in case the admin window was never opened)
+    style.configure("Side.TFrame",background="#163D12")
+    style.configure("Side.TButton",background="#163D12",
+                    foreground="#C1DAC3")
+    style.map("Side.TButton",background=[("active","#25561B")],
+              foreground=[("active","#FFFFFF")])
+    style.configure("Green.Treeview.Heading",
+                    background="#215A17",
+                    foreground="#FFFFFF",
+                    font=("Arial",11,"bold"))
+    style.map("Green.Treeview.Heading",
+              background=[("active","#25561B")])
+    style.configure("Green.Treeview",
+                    background="#F3F6EA",
+                    fieldbackground="#F3F6EA",
+                    foreground="#163D12",
+                    rowheight=28)
 
-        client_window.title(
-        "Green Care - Client")
+    # sidebar
+    sidebar=ttk.Frame(client_window,width=210,style="Side.TFrame")
+    sidebar.pack(side="left",fill="y")
+    sidebar.pack_propagate(False)
 
-        client_window.config(
-            background="#F3F6EA")
+    logo=ttk.Label(sidebar,text="GREEN CARE",
+        background="#215A17",foreground="#FFFFFF",
+        font=("Arial",18,"bold"))
+    logo.pack(pady=(30,40))
 
-        title = ttk.Label(
-            client_window,
-            text=f"Welcome, {username}",
-            font=("Segoe UI", 24, "bold"),
-            background="#F3F6EA",
-            foreground="#2F5D50")
+    schedule_button=ttk.Button(sidebar,text="My Schedule",
+        style="Side.TButton")
+    schedule_button.pack(fill="x",padx=15,pady=5)
 
-        title.pack(pady=40)
-        logout_button = ttk.Button(
-            client_window,
-            text="Logout",
-            style="Zap.TButton",
-            command=lambda:logout(client_window))
+    profile_button=ttk.Button(sidebar,text="My Profile",
+        style="Side.TButton")
+    profile_button.pack(fill="x",padx=15,pady=5)
 
-        logout_button.pack()
+    logout_button=ttk.Button(sidebar,text="Logout",
+        style="Side.TButton",command=lambda:logout(client_window))
+    logout_button.pack(side="bottom",fill="x",padx=15,pady=20)
 
+    # main content
+    content=ttk.Frame(client_window,padding=30)
+    content.pack(side="left",fill="both",expand=True)
+
+    # remove whatever page is showing
+    def clear_page():
+        for widget in content.winfo_children():
+            widget.destroy()
+
+    # schedule page
+    def show_schedule():
+        clear_page()
+
+        ttk.Label(content,text="My Schedule",
+            font=("Arial",24,"bold")).pack(anchor="w",pady=(0,20))
+
+        # table
+        table_frame=ttk.Frame(content)
+        table_frame.pack(fill="both",expand=True)
+
+        table=ttk.Treeview(table_frame,columns=("id","task","status"),
+                           show="headings",style="Green.Treeview")
+
+        table.heading("id",text="ID")
+        table.heading("task",text="Task")
+        table.heading("status",text="Status")
+
+        table.column("id",width=50)
+        table.column("task",width=450)
+        table.column("status",width=110)
+
+        scrollbar=ttk.Scrollbar(table_frame,orient="vertical",
+                                command=table.yview)
+        table.configure(yscrollcommand=scrollbar.set)
+
+        table.pack(side="left",fill="both",expand=True)
+        scrollbar.pack(side="right",fill="y")
+
+        # refresh table
+        def refresh_table():
+            table.delete(*table.get_children())
+            for task in get_tasks(username):
+                table.insert("","end",values=task)
+
+        refresh_table()
+
+        # get selected task
+        def get_selected():
+            selected=table.selection()
+            if not selected:
+                messagebox.showwarning("No selection",
+                    "Please click a task in the table first")
+                return None
+            task_id=int(table.item(selected[0])["values"][0])
+            for task in get_tasks(username):
+                if task[0]==task_id:
+                    return task
+
+        # popup for adding or editing a task
+        def open_form(old_task=None):
+            popup=ttk.Toplevel(window)
+            popup.title("Task")
+            popup.geometry("350x200")
+            popup.grab_set()
+
+            ttk.Label(popup,text="Task").pack(pady=(25,0))
+            task_entry=ttk.Entry(popup,width=35)
+            task_entry.pack(pady=5)
+
+            # prefill for edit
+            if old_task:
+                task_entry.insert(0,old_task[1])
+
+            def save():
+                text=task_entry.get().strip()
+                if text=="":
+                    messagebox.showwarning("Missing information",
+                        "Please enter a task",parent=popup)
+                    return
+                if old_task is None:
+                    add_task(username,text)
+                else:
+                    update_task(old_task[0],text,old_task[2])
+                refresh_table()
+                popup.destroy()
+
+            ttk.Button(popup,text="Save",width=20,
+                       style="Zap.TButton",command=save).pack(pady=20)
+
+        # button actions
+        def add_new():
+            open_form()
+
+        def edit_task():
+            task=get_selected()
+            if task:
+                open_form(task)
+
+        def toggle_done():
+            task=get_selected()
+            if task:
+                new_status="Pending" if task[2]=="Done" else "Done"
+                update_task(task[0],task[1],new_status)
+                refresh_table()
+
+        def delete_one():
+            task=get_selected()
+            if task:
+                answer=messagebox.askyesno("Confirm delete",
+                    f"Delete the task '{task[1]}'?")
+                if answer:
+                    delete_task(task[0])
+                    refresh_table()
+
+        def reset_all():
+            answer=messagebox.askyesno("Reset schedule",
+                "This will delete ALL tasks. Continue?")
+            if answer:
+                clear_tasks(username)
+                refresh_table()
+
+        # buttons
+        button_frame=ttk.Frame(content)
+        button_frame.pack(pady=20)
+
+        ttk.Button(button_frame,text="Add",style="Zap.TButton",
+                   command=add_new).pack(side="left",padx=5)
+        ttk.Button(button_frame,text="Edit",style="Zap.TButton",
+                   command=edit_task).pack(side="left",padx=5)
+        ttk.Button(button_frame,text="Done / Undo",style="Zap.TButton",
+                   command=toggle_done).pack(side="left",padx=5)
+        ttk.Button(button_frame,text="Delete",style="Zap.TButton",
+                   command=delete_one).pack(side="left",padx=5)
+        ttk.Button(button_frame,text="Reset",style="Zap.TButton",
+                   command=reset_all).pack(side="left",padx=5)
+
+    # profile page
+    def show_profile():
+        clear_page()
+
+        profile=get_my_profile(username)
+
+        ttk.Label(content,text="My Profile",
+            font=("Arial",24,"bold")).pack(anchor="w",pady=(0,20))
+
+        # popup form for adding or editing details
+        def open_profile_form():
+            popup=ttk.Toplevel(window)
+            popup.title("Profile")
+            popup.geometry("350x400")
+            popup.grab_set()
+
+            ttk.Label(popup,text="Name").pack(pady=(20,0))
+            name_entry=ttk.Entry(popup,width=30)
+            name_entry.pack()
+
+            ttk.Label(popup,text="Specialty").pack(pady=(15,0))
+            spec_entry=ttk.Entry(popup,width=30)
+            spec_entry.pack()
+
+            ttk.Label(popup,text="Phone").pack(pady=(15,0))
+            phone_entry=ttk.Entry(popup,width=30)
+            phone_entry.pack()
+
+            ttk.Label(popup,text="Working hours").pack(pady=(15,0))
+            hours_entry=ttk.Entry(popup,width=30)
+            hours_entry.pack()
+
+            # prefill if details already exist
+            if profile:
+                name_entry.insert(0,profile[0])
+                spec_entry.insert(0,profile[1])
+                phone_entry.insert(0,profile[2])
+                hours_entry.insert(0,profile[3])
+
+            def save():
+                name=name_entry.get().strip()
+                spec=spec_entry.get().strip()
+                phone=phone_entry.get().strip()
+                hours=hours_entry.get().strip()
+
+                if name=="" or spec=="" or phone=="" or hours=="":
+                    messagebox.showwarning("Missing information",
+                        "Please fill all the fields",parent=popup)
+                    return
+
+                save_my_profile(username,name,spec,phone,hours)
+                popup.destroy()
+                show_profile()
+
+            ttk.Button(popup,text="Save",width=20,
+                       style="Zap.TButton",command=save).pack(pady=25)
+
+        # empty profile: ask for details
+        if profile is None:
+            ttk.Label(content,text="Your profile is empty. Please add your details.",
+                font=("Arial",12)).pack(anchor="w",pady=(0,15))
+            ttk.Button(content,text="Add Details",style="Zap.TButton",
+                       command=open_profile_form).pack(anchor="w")
+            return
+
+        # profile card
+        card=ttk.Frame(content,padding=30,relief="solid",borderwidth=1)
+        card.pack(anchor="w")
+
+        ttk.Label(card,text=profile[0],
+            font=("Arial",20,"bold")).grid(row=0,column=0,columnspan=2,
+                                           sticky="w",pady=(0,20))
+
+        details=[("Specialty",profile[1]),
+                 ("Phone",profile[2]),
+                 ("Working hours",profile[3])]
+
+        for i,(label,value) in enumerate(details):
+            ttk.Label(card,text=label,font=("Arial",12,"bold"),
+                width=16).grid(row=i+1,column=0,sticky="w",pady=8)
+            ttk.Label(card,text=value,
+                font=("Arial",12)).grid(row=i+1,column=1,sticky="w",pady=8)
+
+        ttk.Button(content,text="Edit Details",style="Zap.TButton",
+                   command=open_profile_form).pack(anchor="w",pady=20)
+
+    # connect sidebar buttons
+    schedule_button.config(command=show_schedule)
+    profile_button.config(command=show_profile)
+
+    #profile when clueless ,other one any other time
+    if get_my_profile(username) is None:
+        show_profile()
+    else:
+        show_schedule()
 ######### temporary button ,plses remember to delete ###########
 
-test_admin_button = ttk.Button(
-    main_frame,
-    text="temporary button",
-    style="Zap.TButton",
-    command=open_admin_window)
+test_admin_button = ttk.Button(main_frame,text="temporary button",style="Zap.TButton",command=open_admin_window)
+test_client_button=ttk.Button(main_frame,text="temporary button 2",style="Zap.TButton",command=lambda:open_client_window("daksh"))
 
 test_admin_button.pack(pady=5)
+test_client_button.pack(pady=5)
 
 ########### $$$$$$$  #############
 #mainloop
